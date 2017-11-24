@@ -1,0 +1,10 @@
+*.txt
+*.log
+*.out
+*.csv
+*.tsv
+*.html
+*.model
+*.npy
+*.tar*
+*.ipynb_checkpoints/

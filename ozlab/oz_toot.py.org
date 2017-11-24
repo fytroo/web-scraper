@@ -1,0 +1,37 @@
+from neo4jrestclient.client import GraphDatabase
+url = "http://neo4j:}apTap{ov3@localhost:7474/db/data/"
+gdb = GraphDatabase(url)
+from datetime import datetime
+
+work_id = 'n9735cv'
+hname = 'narou_docs/narou.'+work_id+'.header.txt'
+hlines = open(hname).readlines()
+user_name, when, fname, url = hlines[0].split(',') 
+gdb.query('MERGE (a:User {name:"%s"})'%(user_name), data_contents=True)
+
+for hline in hlines:
+    hline = hline[:-1]
+    who, when, fname, url = hline.split(',') 
+    access = 'public'
+    note = 'corpus narou dev oz'
+    
+    pretext_id = 0
+    flines = open(fname+'.doc.txt').readlines()
+    for fline in flines:
+        if len(fline.rsplit())==0:
+            continue
+        text = fline[:-1].replace('　',' ')
+        now = datetime.now().strftime("%Y%m%dT%H%M%S+0900")
+        text_id = gdb.query('\
+            MATCH (a:User) WHERE a.name="%s"\
+            CREATE (a)-[r:Toot {when:"%s", note:"%s"}]->(b:Card {text:"%s", url:"%s", since:"%s", access:"%s", note:"%s"})\
+            RETURN ID(b)'\
+            %( who, now, note, text, url, when, access, note ), data_contents=True)[0][0]
+        if( pretext_id ):
+            gdb.query('\
+                MATCH (a:Card),(b:Card)\
+                WHERE ID(a)=%s AND ID(b)=%s\
+                CREATE (a)-[r:Anchor {when:"%s", note:"%s"}]->(b)'\
+                %( text_id, pretext_id, now, note ), data_contents=True)
+
+        pretext_id = text_id
